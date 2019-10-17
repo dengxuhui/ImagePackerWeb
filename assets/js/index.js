@@ -15,6 +15,7 @@
 	 */
 	class DropZoneLogic {
 		constructor() {
+			this.dropzone = null;
 			this.initialize();
 		}
 		/**
@@ -28,7 +29,7 @@
 			Dropzone.options.myAwesomeDropzone = zone;
 			zone.paramName = "packer";
 			zone.maxFilesize = 5;
-			zone.maxFiles = 1;
+			// zone.maxFiles = 1;
 			// zone.max
 			zone.init = $this.init;
 			zone.accept = $this.accept;
@@ -37,6 +38,13 @@
 			zone.addRemoveLinks = true;
 			zone.dictRemoveLinks = "删除";
 			zone.dictCancelUpload = "取消";
+			zone.previewTemplate = `
+			<div class="dz-preview dz-file-preview">
+			<div class="dz-details">
+    		<div class="dz-filename"><span data-dz-name></span></div>
+    		<div class="dz-size" data-dz-size></div>
+    		<img data-dz-thumbnail />
+			`
 		}
 
 		/**
@@ -82,6 +90,7 @@
 		 */
 		init(){
 			var $this = window.DropZoneLogic;
+			$this.dropzone = this;
 			this.on("addedfile",(file)=>{
 				$this.onFileAdded(file);
 			});
@@ -122,7 +131,8 @@
 			//上传处理
 			this.btnUpload = document.getElementById("btn_package_file");
 			this.btnUpload.onclick = function(e){
-				console.log(arguments.length);
+				var dropzone = window.DropZoneLogic.dropzone;
+				console.log(dropzone);
 			}
 		}
 	}
