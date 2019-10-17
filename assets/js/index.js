@@ -21,13 +21,22 @@
 		 * 初始化
 		 */
 		initialize() {
+			// Dropzone.autoDiscover = !1;
+			
 			var $this = this;
 			var zone = {};
 			Dropzone.options.myAwesomeDropzone = zone;
 			zone.paramName = "packer";
 			zone.maxFilesize = 5;
+			zone.maxFiles = 1;
+			// zone.max
 			zone.init = $this.init;
 			zone.accept = $this.accept;
+			zone.url = "/";
+			zone.acceptedFiles = ".jpg,.png,.jpeg";
+			zone.addRemoveLinks = true;
+			zone.dictRemoveLinks = "删除";
+			zone.dictCancelUpload = "取消";
 		}
 
 		/**
@@ -36,7 +45,6 @@
 		 */
 		onFileAdded(file){
 			console.log(file);
-			// UpLoadFileData.I.fileDic[file.name] = file;
 		}
 
 		/**
@@ -45,7 +53,28 @@
 		 */
 		onFileRemoved(file){
 			console.log(file);
-			// delete UpLoadFileData.I.fileDic[file.name];
+		}
+
+		/**
+		 * 文件被放到dropzone区域
+		 */
+		onDrop(event){
+			console.log(arguments.length);
+		}
+
+		/**
+		 * 出错
+		 */
+		onError(file){
+			console.log("ERROR");
+		}
+
+		/**
+		 * 离开zone区域
+		 * @param {Event} event 
+		 */
+		onDragLeave(event){
+
 		}
 
 		/**
@@ -56,6 +85,17 @@
 			this.on("addedfile",(file)=>{
 				$this.onFileAdded(file);
 			});
+			this.on("removedfile",(file)=>{
+				$this.onFileRemoved(file);
+			});
+
+			this.on("dragleave",(event)=>{
+				$this.onDragLeave(event);
+			});
+			this.on("drop",(event)=>{
+				$this.onDrop(event);
+			});
+
 		}
 		/**
 		 * 处理回调
@@ -63,9 +103,42 @@
 		 * @param {Function} done 
 		 */
 		accept(file,done){
+			
+		}
 
+		confirm(question,acceptd,rejected){
+			console.log("confirm");
 		}
 	}
 
-	window.DropZoneLogic = new DropZoneLogic();
+	/**
+	 * 界面逻辑
+	 */
+	class ViewLogic{
+		/**
+		 * 构造函数
+		 */
+		constructor(){
+			//上传处理
+			this.btnUpload = document.getElementById("btn_package_file");
+			this.btnUpload.onclick = function(e){
+				console.log(arguments.length);
+			}
+		}
+	}
+
+	/**
+	 * 主函数
+	 */
+	class Main{
+		constructor(){
+			this.initialize();
+		}
+		initialize(){
+			window.DropZoneLogic = new DropZoneLogic();
+			this.viewLogic = new ViewLogic();
+		}
+	}
+
+	new Main();
 }()
