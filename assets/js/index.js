@@ -128,12 +128,27 @@
 		 * 构造函数
 		 */
 		constructor(){
+			var $this = this;
 			//上传处理
 			this.btnUpload = document.getElementById("btn_package_file");
 			this.btnUpload.onclick = function(e){
 				var dropzone = window.DropZoneLogic.dropzone;
-				console.log(dropzone);
+				console.log(dropzone.files);
+				var len = dropzone.files.length;
+				for(var i = 0;i < len;++i){
+					$this.saveFileToBitmapData(dropzone[i]);
+				}
 			}
+		}
+
+		/**
+		 * 保存数据
+		 * @param {File} file 
+		 */
+		saveFileToBitmapData(file){
+			createImageBitmap(file).then((data)=>{
+				console.log(data);
+			})
 		}
 	}
 
