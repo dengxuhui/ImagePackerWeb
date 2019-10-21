@@ -142,8 +142,10 @@
 			c.appendChild($this.canvas);
 			//上传处理			
 			$this.btnUpload = document.getElementById("btn_package_file");
-			this.btnUpload.onclick = function (e) {
+			this.btnUpload.onclick = function (e) {				
 				if (e.currentTarget != $this.btnUpload) return;
+				$this.btnUpload.innerText = "正在分解....";
+				$this.btnUpload.onclick = null;
 				var dropzone = window.DropZoneLogic.dropzone;
 				var len = dropzone.files.length;
 				if (len > ViewLogic.MAX_ATLAS) {
@@ -209,8 +211,9 @@
 		 * 通过jszip下载
 		 * @param {Array} imageDataAry 
 		 */
-		downloadMethodByJSZip(imageDataAry) {
+		downloadMethodByJSZip(imageDataAry) {			
 			var $this = this;
+			$this.btnUpload.innerText = "分解完成开始打包....";
 			var zip = new JSZip();
 			for (var i = 0; i < imageDataAry.length; ++i) {
 				$this.canvas.width = imageDataAry[i].width;
@@ -222,6 +225,7 @@
 			}
 			var blob = zip.generate({ type: "blob" });
 			saveAs(blob, $this.preFix + ".zip");
+			$this.btnUpload.innerText = "下载完成 感谢使用";
 		}
 
 		/**
@@ -332,6 +336,7 @@
 		}
 
 		getColors($this) {
+			$this.btnUpload.innerText = "正在解析像素....";
 			var has = [];
 			var count;
 			for (var i = 0; i < $this.atlasW; ++i) {
