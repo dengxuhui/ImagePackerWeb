@@ -129,10 +129,14 @@
 			$this.splitCompleteAry = [];
 			//是否正在分解中
 			$this.isSpliting = false;
+			/**
+			 * 图集数据源
+			 */
+			$this.sourceImageData = null;
 			//填充画布
 			$this.canvas = document.createElement("canvas");
-			$this.canvas.width = 2048;
-			$this.canvas.height = 2048;
+			$this.canvas.width = ViewLogic.WIDTH;
+			$this.canvas.height = ViewLogic.HEIGHT;
 			//绘画上下文
 			$this.ctx = $this.canvas.getContext("2d");
 			var c = document.querySelector("#canvasRoot");
@@ -140,16 +144,14 @@
 			//上传处理			
 			$this.btnUpload = document.getElementById("btn_package_file");
 			this.btnUpload.onclick = function (e) {
-				if (e.currentTarget != $this.btnUpload)return;				
+				if (e.currentTarget != $this.btnUpload) return;
 				var dropzone = window.DropZoneLogic.dropzone;
 				var len = dropzone.files.length;
-				// if(len > 0){
-					// $this.btnUpload.style.display = "none";
-				// }
-				if($this.isSpliting){
-					alert("正在分解..");
+				if(len > ViewLogic.MAX_ATLAS){
+					alert("最大支持" + ViewLogic.MAX_ATLAS + "个图集的分解功能");
 					return;
 				}
+				$this.ctx.clearRect(0,0,$this.ctx.width,$this.ctx.height);
 				$this.isSpliting = true;
 				for (var i = 0; i < len; ++i) {
 					$this.saveFileToCanvas(dropzone.files[i]);
@@ -163,11 +165,50 @@
 		 */
 		saveFileToCanvas(file) {
 			var $this = this;
-			createImageBitmap(file).then((data) => {
+			createImageBitmap(file).then((data) => {				
 				//data：	ImageBitmap
-				console.log(data);
-				$this.ctx.drawImage(data,0,0);
+				$this.ctx.drawImage(data, 0, 0);
+				var w = data.width > ViewLogic.WIDTH ? ViewLogic.WIDTH : data.width;
+				var h = data.height > ViewLogic.HEIGHT ? ViewLogic.HEIGHT : data.height;
+				$this.sourceImageData = $this.ctx.getImageData(0, 0, w, h);
 			});
+		}
+
+		/**
+		 * 
+		 * @param {Number} x 
+		 * @param {Number} y 
+		 */
+		getPixelDataByXY(x,y){
+			var data = {};
+			
+		}
+
+
+		changeColorReverse(){
+			//数组每4位代表一个像素				
+			for (var i = 0; i < allData.data.length; i += 4) {
+				allData.data[i] = 255 - allData.data[i];
+				allData.data[i + 1] = 255 - allData.data[i + 1];
+				allData.data[i + 2] = 255 - allData.data[i + 2];
+				allData.data[i + 3] = 255;
+			}
+		}
+	}
+
+	ViewLogic.WIDTH = 2048;
+	ViewLogic.HEIGHT = 2048;
+	ViewLogic.MAX_ATLAS = 1;
+
+	class ImageData{
+		constructor(){
+			var $this = this;
+			$this.x = 0;
+			$this.y = 0;
+			$this.R = 0;
+			$this.G = 0;
+			$this.B = 0;
+			$this.A = 0;
 		}
 	}
 
