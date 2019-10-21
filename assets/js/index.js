@@ -48,7 +48,7 @@
 		 * @param {File} file 
 		 */
 		onFileAdded(file) {
-			console.log(file);
+			this.updateBtnDisplay();
 		}
 
 		/**
@@ -56,7 +56,25 @@
 		 * @param {File} file 
 		 */
 		onFileRemoved(file) {
-			console.log(file);
+			this.updateBtnDisplay();
+		}
+
+		updateBtnDisplay() {
+			var $this = this;
+			var files = $this.dropzone.files;
+			var btn = document.getElementById("btn_package_file");
+			if (files.length <= 0) {
+				btn.style.display = "none";
+			} else {
+				var isExistPng = false;
+				for (var i = 0; i < files.length; ++i) {
+					if (files[i].type === "image/png") {
+						isExistPng = true;
+						break;
+					}
+				}
+				btn.style.display = isExistPng ? "" : "none";
+			}
 		}
 
 		/**
@@ -100,7 +118,7 @@
 			this.on("drop", (event) => {
 				$this.onDrop(event);
 			});
-
+			$this.updateBtnDisplay();
 		}
 		/**
 		 * 处理回调
@@ -142,7 +160,7 @@
 			c.appendChild($this.canvas);
 			//上传处理			
 			$this.btnUpload = document.getElementById("btn_package_file");
-			this.btnUpload.onclick = function (e) {				
+			this.btnUpload.onclick = function (e) {
 				if (e.currentTarget != $this.btnUpload) return;
 				$this.btnUpload.innerText = "正在分解....";
 				$this.btnUpload.onclick = null;
@@ -211,7 +229,7 @@
 		 * 通过jszip下载
 		 * @param {Array} imageDataAry 
 		 */
-		downloadMethodByJSZip(imageDataAry) {			
+		downloadMethodByJSZip(imageDataAry) {
 			var $this = this;
 			$this.btnUpload.innerText = "分解完成开始打包....";
 			var zip = new JSZip();
