@@ -200,8 +200,28 @@
 			$this.ctx.clearRect(0, 0, ViewLogic.WIDTH, ViewLogic.HEIGHT);
 
 			//for 
-			$this.downloadMethodByCreateHerfA(imageDataAry);
+			// $this.downloadMethodByCreateHerfA(imageDataAry);
+			$this.downloadMethodByJSZip(imageDataAry);
 			//TODO 将文件打包成zip再下载
+		}
+
+		/**
+		 * 通过jszip下载
+		 * @param {Array} imageDataAry 
+		 */
+		downloadMethodByJSZip(imageDataAry) {
+			var $this = this;
+			var zip = new JSZip();
+			for (var i = 0; i < imageDataAry.length; ++i) {
+				$this.canvas.width = imageDataAry[i].width;
+				$this.canvas.height = imageDataAry[i].height;
+				$this.ctx.putImageData(imageDataAry[i], 0, 0);
+				var base64 = $this.canvas.toDataURL("image/png", 1);
+				base64 = base64.split(",")[1];
+				zip.file($this.preFix + "_" + i + ".png", base64, { base64: true });
+			}
+			var blob = zip.generate({ type: "blob" });
+			saveAs(blob, $this.preFix + ".zip");
 		}
 
 		/**
@@ -220,9 +240,9 @@
 				dLink.download = $this.preFix + "_" + i;
 				dLink.href = imgUrl;
 				dLink.dataset.downloadurl = ["image/png", dLink.download, dLink.href].join(":");
-				document.body.appendChild(dLink);				
+				document.body.appendChild(dLink);
 				dLink.click();
-			}			
+			}
 			document.body.removeChild(dLink);
 		}
 
