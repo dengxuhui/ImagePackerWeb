@@ -137,6 +137,7 @@
 			$this.ctx = $this.canvas.getContext("2d");
 			$this.atlasH = 0;
 			$this.atlasW = 0;
+			$this.preFix = "";
 			var c = document.querySelector("#canvasRoot");
 			c.appendChild($this.canvas);
 			//上传处理			
@@ -163,6 +164,7 @@
 		 */
 		saveFileToCanvas(file) {
 			var $this = this;
+			this.preFix = file.name.split(".")[0];
 			createImageBitmap(file).then((data) => {
 				$this.startSplit(data, $this);
 			});
@@ -190,6 +192,53 @@
 				}
 			}
 			console.log("分解完成长度：" + rects.length);
+			var imageDataAry = [];
+			for (var i = 0; i < rects.length; ++i) {
+				var data = $this.ctx.getImageData(rects[i].x, rects[i].y, rects[i].width, rects[i].height);
+				imageDataAry.push(data);
+			}
+			$this.ctx.clearRect(0, 0, ViewLogic.WIDTH, ViewLogic.HEIGHT);
+
+			//for 
+			$this.downloadMethodByCreateHerfA(imageDataAry);
+			//TODO 将文件打包成zip再下载
+		}
+
+		/**
+		 * 可以下载  但是不能选择文件夹下载
+		 */
+		downloadMethodByCreateHerfA(imageDataAry) {
+			var $this = this;
+			var dLink = document.createElement("a");
+
+			for (var i = 0; i < imageDataAry.length; ++i) {
+				$this.canvas.width = imageDataAry[i].width;
+				$this.canvas.height = imageDataAry[i].height;
+				$this.ctx.putImageData(imageDataAry[i], 0, 0);
+				var imgUrl = $this.canvas.toDataURL("image/png", 1);
+
+				dLink.download = $this.preFix + "_" + i;
+				dLink.href = imgUrl;
+				dLink.dataset.downloadurl = ["image/png", dLink.download, dLink.href].join(":");
+				document.body.appendChild(dLink);				
+				dLink.click();
+			}			
+			document.body.removeChild(dLink);
+		}
+
+		/**
+		 * 会存在安全影响，不适用，而且下载下来的的文件也需要修改后缀
+		 * @param {Array} imageDataAry 
+		 */
+		downloadMethodByChgFileType(imageDataAry) {
+			var $this = this;
+			$this.canvas.width = imageDataAry[0].width;
+			$this.canvas.height = imageDataAry[0].height;
+			$this.ctx.putImageData(imageDataAry[0], 0, 0);
+			var image = new Image(imageDataAry[0].width, imageDataAry[0].height);
+			image.src = $this.canvas.toDataURL("image/png", 1);
+			var url = image.src.replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+			window.open(url);
 		}
 
 		getRect(colors, x, y) {
@@ -214,8 +263,8 @@
 			var left = rect.x;
 			var top = rect.y;
 			var bottom = rect.y + rect.height;
-			for(var i = left;i <= right;i++){
-				for(var j = top;j < bottom;++j){
+			for (var i = left; i <= right; i++) {
+				for (var j = top; j < bottom; ++j) {
 					colors[i][j] = false;
 				}
 			}
@@ -223,36 +272,36 @@
 
 		R_Exist(colors, rect) {
 			var right = rect.x + rect.width;
-			if(right >= colors.length || rect.x < 0)return false;			
-			for(var i = 0;i < rect.height;i++){
-				if(this.isExist(colors,right + 1,rect.y + i))return true;				
-			}	
+			if (right >= colors.length || rect.x < 0) return false;
+			for (var i = 0; i < rect.height; i++) {
+				if (this.isExist(colors, right + 1, rect.y + i)) return true;
+			}
 			return false;
 		}
 
 		D_Exist(colors, rect) {
 			var bottom = rect.y + rect.height;
-			if(bottom >= colors[0].length || rect.y < 0)return false;
-			for(var i = 0;i < rect.width;++i){
-				if(this.isExist(colors,rect.x + i,bottom + 1))return true;
+			if (bottom >= colors[0].length || rect.y < 0) return false;
+			for (var i = 0; i < rect.width; ++i) {
+				if (this.isExist(colors, rect.x + i, bottom + 1)) return true;
 			}
 			return false;
 		}
 
 		L_Exist(colors, rect) {
 			var right = rect.x + rect.width;
-			if(right >= colors.length || rect.x < 0)return false;
-			for(var i = 0;i < rect.height;++i){
-				if(this.isExist(colors,rect.x - 1,rect.y + i))return true;				
+			if (right >= colors.length || rect.x < 0) return false;
+			for (var i = 0; i < rect.height; ++i) {
+				if (this.isExist(colors, rect.x - 1, rect.y + i)) return true;
 			}
 			return false;
 		}
 
 		U_Exist(colors, rect) {
 			var bottom = rect.y + rect.height;
-			if(bottom >= colors[0].length || rect.y < 0)return false;
-			for(var i = 0;i < rect.width;++i){
-				if(this.isExist(colors,rect.x + i,rect.y - 1))return true;
+			if (bottom >= colors[0].length || rect.y < 0) return false;
+			for (var i = 0; i < rect.width; ++i) {
+				if (this.isExist(colors, rect.x + i, rect.y - 1)) return true;
 			}
 			return false;
 		}
