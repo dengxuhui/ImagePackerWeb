@@ -412,17 +412,6 @@
 			// console.log("GET Colors Complete");
 			return has;
 		}
-
-
-		changeColorReverse() {
-			//数组每4位代表一个像素				
-			for (var i = 0; i < allData.data.length; i += 4) {
-				allData.data[i] = 255 - allData.data[i];
-				allData.data[i + 1] = 255 - allData.data[i + 1];
-				allData.data[i + 2] = 255 - allData.data[i + 2];
-				allData.data[i + 3] = 255;
-			}
-		}
 	}
 
 	ViewLogic.WIDTH = 2048;
