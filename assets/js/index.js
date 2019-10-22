@@ -227,13 +227,14 @@
 			var $this = this;
 			$this.btnUpload.innerText = "分解完成开始打包....";
 			var zip = new JSZip();
+			var folder = zip.folder($this.preFix);
 			for (var i = 0; i < imageDataAry.length; ++i) {
 				$this.canvas.width = imageDataAry[i].width;
 				$this.canvas.height = imageDataAry[i].height;
 				$this.ctx.putImageData(imageDataAry[i], 0, 0);
 				var base64 = $this.canvas.toDataURL("image/png", 1);
 				base64 = base64.split(",")[1];
-				zip.file($this.preFix + "_" + i + ".png", base64, { base64: true });
+				folder.file($this.preFix + "_" + i + ".png", base64, { base64: true });
 			}
 			var blob = zip.generate({ type: "blob" });
 			saveAs(blob, $this.preFix + ".zip");
