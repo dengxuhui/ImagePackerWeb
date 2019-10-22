@@ -61,7 +61,7 @@
 
 		updateBtnDisplay() {
 			var $this = this;
-			var files = $this.dropzone.files;
+			var files = $this.dropzone.files;			
 			var btn = document.getElementById("btn_package_file");
 			if (files.length <= 0) {
 				btn.style.display = "none";
@@ -137,86 +137,73 @@
 		 */
 		constructor() {
 			var $this = this;
-			//分解完成的图片			
-			$this.splitCompleteAry = [];
 			//是否正在分解中
 			$this.isSpliting = false;
-			//填充画布
-			$this.canvas = document.createElement("canvas");
-			$this.canvas.width = ViewLogic.WIDTH;
-			$this.canvas.height = ViewLogic.HEIGHT;
-			//绘画上下文
-			$this.ctx = $this.canvas.getContext("2d");
-			$this.atlasH = 0;
-			$this.atlasW = 0;
-			$this.preFix = "";
-			var c = document.querySelector("#canvasRoot");
-			c.appendChild($this.canvas);
 			//上传处理			
 			$this.btnUpload = document.getElementById("btn_package_file");
+			//图集分解对象
+			$this.atlasSpliterAry = [];
+			$this.splitCount = 0;	
+			//压缩	
+			$this.zip = new JSZip();
+
+			//鼠标点击事件注册
 			this.btnUpload.onclick = function (e) {
 				if (e.currentTarget != $this.btnUpload) return;
 				$this.btnUpload.innerText = "正在分解....";
 				$this.btnUpload.onclick = null;
-				var dropzone = window.DropZoneLogic.dropzone;
-				var len = dropzone.files.length;
-				if (len > ViewLogic.MAX_ATLAS) {
-					alert("最大支持" + ViewLogic.MAX_ATLAS + "个图集的分解功能");
-					return;
-				}
-				$this.ctx.clearRect(0, 0, $this.ctx.width, $this.ctx.height);
+				var dropzone = window.DropZoneLogic.dropzone;				
 				$this.isSpliting = true;
+				var files = dropzone.files;
+				var len = files.length;
 				for (var i = 0; i < len; ++i) {
-					$this.saveFileToCanvas(dropzone.files[i]);
+					if(files[i].type == "image/png"){//找到一个是文件
+						var configFile = $this.findAtlasMatchConfig(files[i].name,files,$this);
+						var spliter = new AtlasSpliter(files[i],$this.zip,configFile);
+						$this.splitCount++;
+						$this.atlasSpliterAry.push(spliter);
+					}
+				}
+
+				for(var i = 0;i < $this.atlasSpliterAry.length;++i){
+					$this.atlasSpliterAry[i].startUp($this.onAtlasFileSplitComplete);
 				}
 			}
 		}
 
 		/**
-		 * 保存数据
-		 * @param {File} file 
+		 * 图集分解完成回调
 		 */
-		saveFileToCanvas(file) {
-			var $this = this;
-			this.preFix = file.name.split(".")[0];
-			createImageBitmap(file).then((data) => {
-				$this.startSplit(data, $this);
-			});
+		onAtlasFileSplitComplete(){
+			var $this = window.ViewLogic;
+			if(!$this.isSpliting){
+				return;
+			}
+			$this.splitCount--;
+			if($this.splitCount <= 0){
+				$this.isSpliting = false;
+				var blob = $this.zip.generate({ type: "blob" });
+				saveAs(blob, "AtlasSplit" + ".zip");
+			}
 		}
 
-		startSplit(data, $this) {
-			// this = $this;
-			//data：	ImageBitmap
-			$this.ctx.drawImage(data, 0, 0);
-			var w = data.width > ViewLogic.WIDTH ? ViewLogic.WIDTH : data.width;
-			var h = data.height > ViewLogic.HEIGHT ? ViewLogic.HEIGHT : data.height;
-			$this.atlasH = h;
-			$this.atlasW = w;
-			var colors = $this.getColorsNew($this);
-			var rects = [];//Rectangle Array
-			var rect = null;//Rectangle Pointer
-			for (var i = 0; i < $this.atlasW; ++i) {
-				for (var j = 0; j < $this.atlasH; ++j) {
-					if ($this.isExist(colors, i, j)) {
-						rect = $this.getRect(colors, i, j);
-						if (rect.width > 5 && rect.height > 5) {
-							rects.push(rect);
-						}
-					}
+		/**
+		 * 获取图集图片对应的配置文件
+		 * @param {String} fileName 
+		 * @param {Array<File>} files 
+		 * @param {ViewLogic} $this 
+		 */
+		findAtlasMatchConfig(fileName,files,$this){
+			var prefix = fileName.split(".")[0];
+			for(var i = 0;i < files.length;++i){
+				var nameAry = files[i].name.split(".");
+				if(nameAry.length != 2){
+					continue;
+				}
+				if(nameAry[0] == prefix && (nameAry[1] == "atlas" || nameAry[1] == "json")){
+					return files[i];
 				}
 			}
-			console.log("分解完成长度：" + rects.length);
-			var imageDataAry = [];
-			for (var i = 0; i < rects.length; ++i) {
-				var data = $this.ctx.getImageData(rects[i].x, rects[i].y, rects[i].width, rects[i].height);
-				imageDataAry.push(data);
-			}
-			$this.ctx.clearRect(0, 0, ViewLogic.WIDTH, ViewLogic.HEIGHT);
-
-			//for 
-			// $this.downloadMethodByCreateHerfA(imageDataAry);
-			$this.downloadMethodByJSZip(imageDataAry);
-			//TODO 将文件打包成zip再下载
 		}
 
 		/**
@@ -277,7 +264,156 @@
 			var url = image.src.replace(/^data:image\/[^;]/, 'data:application/octet-stream');
 			window.open(url);
 		}
+	}	
 
+	/**
+	 * 图集分解对象
+	 */
+	class AtlasSpliter{
+		/**
+		 * 构造函数
+		 * @param {File} sourceFile 
+		 * @param {JSZip} zip 
+		 * @param {File} atlasFile 
+		 */
+		constructor(sourceFile,zip,atlasFile){
+			this.isUseConfig = atlasFile == null ? false : true;//是否使用图集配置文件
+			this.sourceFile = sourceFile;//图集文件
+			this.atlasFile = atlasFile;//配置文件
+			this.zip = zip;//JSZip对象 在打包完成后 将文件写入这个对象中
+			this.callBack = null;//分解完成回调
+			this.preFix = sourceFile.name.split(".")[0];//文件前缀  在无图集文档的时候使用
+			this.canvas = document.createElement("canvas");//cavnas对象
+			this.canvas.width = AtlasSpliter.MAX_W;
+			this.canvas.height = AtlasSpliter.MAX_H;
+			this.ctx = this.canvas.getContext("2d");//绘图上下文
+			this.atlasW = 0;//图集宽度
+			this.atlasH = 0;//图集高度
+		}
+		
+		/**
+		 * 开始分解
+		 * @param {Function} callBack 
+		 */
+		startUp(callBack){
+			this.callBack = callBack;
+			this.saveFileToCanvas();
+		}
+
+		/**
+		 * 将文件写入Canvas
+		 */
+		saveFileToCanvas(){
+			var $this = this;
+			createImageBitmap($this.sourceFile).then((data)=>{
+				$this.startSplit(data,$this);
+			});
+		}
+		/**
+		 * 开始分解图集
+		 * @param {ImageBitmap} data 
+		 * @param {AtlasSpliter} $this 
+		 */
+		startSplit(data,$this){
+			$this.ctx.drawImage(data, 0, 0);
+			var w,h;
+			if(data.width > AtlasSpliter.MAX_W){
+				w = AtlasSpliter.MAX_W;
+				$this.isUseConfig = false;//超宽不使用图集配置文件解析
+			}else{
+				w = data.width;
+			}
+			if(data.height > AtlasSpliter.MAX_H){
+				h = AtlasSpliter.MAX_H;
+				$this.isUseConfig = false;//超高不使用图集配置文件解析
+			}else{
+				h = data.height;
+			}
+			$this.atlasW = w;
+			$this.atlasH = h;
+
+			var rects = null;
+			//区分分解方式
+			if($this.isUseConfig){
+				rects = $this.splitByAtlasConfig($this);
+			}else{
+				rects = $this.splitByColorsMap($this);
+			}
+			//碎图数据
+			var dataAry = $this.generateImageDataAry(rects,$this);
+			$this.ctx.clearRect(0, 0, AtlasSpliter.MAX_W,AtlasSpliter.MAX_H);
+			$this.saveImageDatasByJSZip(dataAry,$this);
+			//保存完成执行回调
+			if($this.callBack){
+				$this.callBack.call();
+			}
+		}
+
+		/**
+		 * 通过配置文件分解图集
+		 * @param {AtlasSpliter} $this 
+		 */
+		splitByAtlasConfig($this){
+
+		}
+
+		/**
+		 * 通过逐像素判定分解图集
+		 * @param {AtlasSpliter} $this 
+		 */
+		splitByColorsMap($this){
+			var colors = $this.generateColorsMap($this);//生成颜色二维数组
+			var rects = [];//碎图包围盒集合
+			var rect = null;//Rectangle
+			for(var i = 0;i < $this.atlasW;++i){
+				for(var j = 0;j < $this.atlasH;++j){
+					if($this.isExist(colors,i,j)){
+						rect = $this.getRect(colors,i,j);
+						if(rect.width > 5 && rect.height > 5){
+							rects.push(rect);
+						}
+					}
+				}
+			}
+			return rects;
+		}
+
+		/**
+		 * 存储图形数据
+		 * @param {Array<ImageData>} dataAry 
+		 */
+		saveImageDatasByJSZip(dataAry,$this){
+			var folder = $this.zip.folder($this.preFix);
+			for(var i = 0;i < dataAry.length;++i){
+				$this.canvas.width = dataAry[i].width;
+				$this.canvas.height = dataAry[i].height;
+				$this.ctx.putImageData(dataAry[i],0,0);
+				var base64 = $this.canvas.toDataURL("image/png",1);
+				base64 = base64.split(",")[1];	
+				folder.file($this.preFix + "_" + i + ".png",base64,{base64:true});
+			}			
+		}
+
+		/**
+		 * 生成图像数据数组
+		 * @param {Array<Rectangle>} rects 
+		 * @param {AtlasSpliter} $this
+		 */
+		generateImageDataAry(rects,$this){
+			var dataAry = [];
+			for(var i = 0;i < rects.length;++i){
+				var data = $this.ctx.getImageData(rects[i].x,rects[i].y,rects[i].width,rects[i].height);
+				dataAry.push(data);
+			}
+			return dataAry;
+		}
+
+		/**
+		 * 获取碎图区域
+		 * @param {Array} colors 
+		 * @param {Number} x 
+		 * @param {Number} y 
+		 */
 		getRect(colors, x, y) {
 			var rect = new Rectangle(x, y, 1, 1);
 			var flag;
@@ -309,6 +445,49 @@
 			return rect;
 		}
 
+		/**
+		 * 生成像素颜色二维图
+		 * @param {AtlasSpliter} $this 
+		 */
+		generateColorsMap($this){
+			var map = [];
+			var count;
+			var allPixel = $this.ctx.getImageData(0, 0, $this.atlasW, $this.atlasH);//所有像素数据
+			for (var i = 0; i < $this.atlasW; ++i) {
+				map[i] = [];
+				for (var j = 0; j < $this.atlasH; ++j) {
+					var startIndex = (j * $this.atlasW + i) * 4;
+					count = 0;
+					if (allPixel.data[startIndex] < 4) count++;
+					if (allPixel.data[startIndex + 1] < 4) count++;
+					if (allPixel.data[startIndex + 2] < 4) count++;
+					//当像素alpha值过小，或者颜色与alpha都小的时候视为空白像素
+					if (allPixel.data[startIndex + 3] < 3 || (count > 2 && allPixel.data[startIndex + 3] < 30)) map[i][j] = false;
+					else map[i][j] = true;
+				}
+			}
+			return map;
+		}
+
+		/**
+		 * 是否存在颜色
+		 * @param {Array} colors 
+		 * @param {Number} x 
+		 * @param {Number} y 
+		 */
+		isExist(colors, x, y) {
+			if (x < 0 || y < 0 || x >= colors.length || y >= colors[0].length) {
+				return false;
+			} else {
+				return colors[x][y];
+			}
+		}
+
+		/**
+		 * 清空Rectangle区域内的像素
+		 * @param {Array} colors 
+		 * @param {Rectangle} rect 
+		 */
 		clearRect(colors, rect) {
 			var right = rect.x + rect.width;
 			var left = rect.x;
@@ -321,6 +500,11 @@
 			}
 		}
 
+		/**
+		 * 右侧是否有真实像素存在
+		 * @param {Array} colors 
+		 * @param {Rectangle} rect 
+		 */
 		R_Exist(colors, rect) {
 			var right = rect.x + rect.width;
 			if (right >= colors.length || rect.x < 0) return false;
@@ -330,6 +514,11 @@
 			return false;
 		}
 
+		/**
+		 * 下方是否存在真实像素
+		 * @param {Array} colors 
+		 * @param {Rectangle} rect 
+		 */
 		D_Exist(colors, rect) {
 			var bottom = rect.y + rect.height;
 			if (bottom >= colors[0].length || rect.y < 0) return false;
@@ -339,6 +528,11 @@
 			return false;
 		}
 
+		/**
+		 * 左侧是否存在真实像素
+		 * @param {Array} colors 
+		 * @param {Rectangle} rect 
+		 */
 		L_Exist(colors, rect) {
 			var right = rect.x + rect.width;
 			if (right >= colors.length || rect.x < 0) return false;
@@ -348,6 +542,11 @@
 			return false;
 		}
 
+		/**
+		 * 上方是否存在真实像素
+		 * @param {Array} colors 
+		 * @param {Rectangle} rect 
+		 */
 		U_Exist(colors, rect) {
 			var bottom = rect.y + rect.height;
 			if (bottom >= colors[0].length || rect.y < 0) return false;
@@ -356,68 +555,19 @@
 			}
 			return false;
 		}
-
-		isExist(colors, x, y) {
-			if (x < 0 || y < 0 || x >= colors.length || y >= colors[0].length) {
-				return false;
-			} else {
-				return colors[x][y];
-			}
-		}
-
-		getColorsOld($this) {
-			$this.btnUpload.innerText = "正在解析像素....";
-			var has = [];
-			var count;
-			var sT = new Date().getTime();
-			for (var i = 0; i < $this.atlasW; ++i) {
-				has[i] = [];
-				for (var j = 0; j < $this.atlasH; ++j) {
-					var pixel = $this.ctx.getImageData(i, j, 1, 1);
-					count = 0;
-					if (pixel.data[0] < 4) count++;
-					if (pixel.data[1] < 4) count++;
-					if (pixel.data[2] < 4) count++;
-					if (pixel.data[3] < 3 || (count > 2 && pixel.data[3] < 30)) has[i][j] = false;
-					else has[i][j] = true;
-				}
-			}
-			var eT = new Date().getTime();
-			console.log("用时：" + (eT - sT) + "毫秒");
-			console.log("GET Colors Complete");
-			return has;
-		}
-
-		getColorsNew($this) {
-			$this.btnUpload.innerText = "正在解析像素....";
-			var has = [];
-			var count;
-			var sT = new Date().getTime();
-			var allPixel = $this.ctx.getImageData(0, 0, $this.atlasW, $this.atlasH);
-			for (var i = 0; i < $this.atlasW; ++i) {
-				has[i] = [];
-				for (var j = 0; j < $this.atlasH; ++j) {
-					// var pixel = $this.ctx.getImageData(i, j, 1, 1);
-					var startIndex = (j * $this.atlasW + i) * 4;
-					count = 0;
-					if (allPixel.data[startIndex] < 4) count++;
-					if (allPixel.data[startIndex + 1] < 4) count++;
-					if (allPixel.data[startIndex + 2] < 4) count++;
-					if (allPixel.data[startIndex + 3] < 3 || (count > 2 && allPixel.data[startIndex + 3] < 30)) has[i][j] = false;
-					else has[i][j] = true;
-				}
-			}
-			var eT = new Date().getTime();
-			console.log("用时：" + (eT - sT) + "毫秒");
-			// console.log("GET Colors Complete");
-			return has;
-		}
 	}
+	/**
+	 * 最大宽度
+	 */
+	AtlasSpliter.MAX_W = 2048;
+	/**
+	 * 最大高度
+	 */
+	AtlasSpliter.MAX_H = 2048;
 
-	ViewLogic.WIDTH = 2048;
-	ViewLogic.HEIGHT = 2048;
-	ViewLogic.MAX_ATLAS = 1;
-
+	/**
+	 * 矩形框数据
+	 */
 	class Rectangle {
 		constructor(x = 0, y = 0, width = 0, height = 0) {
 			var $this = this;
@@ -437,7 +587,7 @@
 		}
 		initialize() {
 			window.DropZoneLogic = new DropZoneLogic();
-			this.viewLogic = new ViewLogic();
+			window.ViewLogic = new ViewLogic();
 		}
 	}
 	new Main();
