@@ -81,7 +81,6 @@
 		 * 文件被放到dropzone区域
 		 */
 		onDrop(event) {
-			console.log(arguments.length);
 		}
 
 		/**
@@ -283,10 +282,24 @@
 			var flag;
 			do {
 				flag = false;
-				while (this.R_Exist(colors, rect)) { rect.width++; flag = true }
-				while (this.D_Exist(colors, rect)) { rect.height++; flag = true }
-				while (this.L_Exist(colors, rect)) { rect.width++; rect.x--; flag = true }
-				while (this.U_Exist(colors, rect)) { rect.height++; rect.y--; flag = true }
+				while (this.R_Exist(colors, rect)) { 
+					rect.width++; 
+					flag = true;
+				}
+				while (this.D_Exist(colors, rect)) { 
+					rect.height++; 
+					flag = true;
+				}
+				while (this.L_Exist(colors, rect)) { 
+					rect.width++; 
+					rect.x--; 
+					flag = true;
+				}
+				while (this.U_Exist(colors, rect)) { 
+					rect.height++; 
+					rect.y--; 
+					flag = true;
+				}
 			} while (flag);
 			this.clearRect(colors, rect);
 			rect.width++;
@@ -301,7 +314,7 @@
 			var top = rect.y;
 			var bottom = rect.y + rect.height;
 			for (var i = left; i <= right; i++) {
-				for (var j = top; j < bottom; ++j) {
+				for (var j = top; j <= bottom; ++j) {
 					colors[i][j] = false;
 				}
 			}
@@ -344,8 +357,11 @@
 		}
 
 		isExist(colors, x, y) {
-			if (x < 0 || y < 0 || x >= colors.length || y >= colors[0].length) return false;
-			return colors[x][y];
+			if (x < 0 || y < 0 || x >= colors.length || y >= colors[0].length) {
+				return false;
+			} else {
+				return colors[x][y];
+			}
 		}
 
 		getColorsOld($this) {
@@ -371,12 +387,12 @@
 			return has;
 		}
 
-		getColorsNew($this){
+		getColorsNew($this) {
 			$this.btnUpload.innerText = "正在解析像素....";
 			var has = [];
 			var count;
 			var sT = new Date().getTime();
-			var allPixel = $this.ctx.getImageData(0,0,$this.atlasW,$this.atlasH);
+			var allPixel = $this.ctx.getImageData(0, 0, $this.atlasW, $this.atlasH);
 			for (var i = 0; i < $this.atlasW; ++i) {
 				has[i] = [];
 				for (var j = 0; j < $this.atlasH; ++j) {
@@ -392,7 +408,7 @@
 			}
 			var eT = new Date().getTime();
 			console.log("用时：" + (eT - sT) + "毫秒");
-			console.log("GET Colors Complete");
+			// console.log("GET Colors Complete");
 			return has;
 		}
 
