@@ -1,15 +1,5 @@
 !function () {
 	"use strict";
-
-	//当前上传文件存储数据
-	class UpLoadFileData {
-
-		constructor() {
-			this.fileDic = {};
-		}
-	}
-	UpLoadFileData.I = new UpLoadFileData();
-
 	/**
 	 * 拖动逻辑
 	 */
@@ -61,7 +51,7 @@
 
 		updateBtnDisplay() {
 			var $this = this;
-			var files = $this.dropzone.files;			
+			var files = $this.dropzone.files;
 			var btn = document.getElementById("btn_package_file");
 			if (files.length <= 0) {
 				btn.style.display = "none";
@@ -143,7 +133,7 @@
 			$this.btnUpload = document.getElementById("btn_package_file");
 			//图集分解对象
 			$this.atlasSpliterAry = [];
-			$this.splitCount = 0;	
+			$this.splitCount = 0;
 			//压缩	
 			$this.zip = new JSZip();
 
@@ -152,20 +142,20 @@
 				if (e.currentTarget != $this.btnUpload) return;
 				$this.btnUpload.innerText = "正在分解....";
 				$this.btnUpload.onclick = null;
-				var dropzone = window.DropZoneLogic.dropzone;				
+				var dropzone = window.DropZoneLogic.dropzone;
 				$this.isSpliting = true;
 				var files = dropzone.files;
 				var len = files.length;
 				for (var i = 0; i < len; ++i) {
-					if(files[i].type == "image/png"){//找到一个是文件
-						var configFile = $this.findAtlasMatchConfig(files[i].name,files,$this);
-						var spliter = new AtlasSpliter(files[i],$this.zip,configFile);
+					if (files[i].type == "image/png") {//找到一个是文件
+						var configFile = $this.findAtlasMatchConfig(files[i].name, files, $this);
+						var spliter = new AtlasSpliter(files[i], $this.zip, configFile);
 						$this.splitCount++;
 						$this.atlasSpliterAry.push(spliter);
 					}
 				}
 
-				for(var i = 0;i < $this.atlasSpliterAry.length;++i){
+				for (var i = 0; i < $this.atlasSpliterAry.length; ++i) {
 					$this.atlasSpliterAry[i].startUp($this.onAtlasFileSplitComplete);
 				}
 			}
@@ -174,13 +164,13 @@
 		/**
 		 * 图集分解完成回调
 		 */
-		onAtlasFileSplitComplete(){
+		onAtlasFileSplitComplete() {
 			var $this = window.ViewLogic;
-			if(!$this.isSpliting){
+			if (!$this.isSpliting) {
 				return;
 			}
 			$this.splitCount--;
-			if($this.splitCount <= 0){
+			if ($this.splitCount <= 0) {
 				$this.isSpliting = false;
 				var blob = $this.zip.generate({ type: "blob" });
 				saveAs(blob, "AtlasSplit" + ".zip");
@@ -193,14 +183,14 @@
 		 * @param {Array<File>} files 
 		 * @param {ViewLogic} $this 
 		 */
-		findAtlasMatchConfig(fileName,files,$this){
+		findAtlasMatchConfig(fileName, files, $this) {
 			var prefix = fileName.split(".")[0];
-			for(var i = 0;i < files.length;++i){
+			for (var i = 0; i < files.length; ++i) {
 				var nameAry = files[i].name.split(".");
-				if(nameAry.length != 2){
+				if (nameAry.length != 2) {
 					continue;
 				}
-				if(nameAry[0] == prefix && (nameAry[1] == "atlas" || nameAry[1] == "json")){
+				if (nameAry[0] == prefix && (nameAry[1] == "atlas" || nameAry[1] == "json")) {
 					return files[i];
 				}
 			}
@@ -264,19 +254,19 @@
 			var url = image.src.replace(/^data:image\/[^;]/, 'data:application/octet-stream');
 			window.open(url);
 		}
-	}	
+	}
 
 	/**
 	 * 图集分解对象
 	 */
-	class AtlasSpliter{
+	class AtlasSpliter {
 		/**
 		 * 构造函数
 		 * @param {File} sourceFile 
 		 * @param {JSZip} zip 
 		 * @param {File} atlasFile 
 		 */
-		constructor(sourceFile,zip,atlasFile){
+		constructor(sourceFile, zip, atlasFile) {
 			this.isUseConfig = atlasFile == null ? false : true;//是否使用图集配置文件
 			this.sourceFile = sourceFile;//图集文件
 			this.atlasFile = atlasFile;//配置文件
@@ -290,12 +280,12 @@
 			this.atlasW = 0;//图集宽度
 			this.atlasH = 0;//图集高度
 		}
-		
+
 		/**
 		 * 开始分解
 		 * @param {Function} callBack 
 		 */
-		startUp(callBack){
+		startUp(callBack) {
 			this.callBack = callBack;
 			this.saveFileToCanvas();
 		}
@@ -303,10 +293,10 @@
 		/**
 		 * 将文件写入Canvas
 		 */
-		saveFileToCanvas(){
+		saveFileToCanvas() {
 			var $this = this;
-			createImageBitmap($this.sourceFile).then((data)=>{
-				$this.startSplit(data,$this);
+			createImageBitmap($this.sourceFile).then((data) => {
+				$this.startSplit(data, $this);
 			});
 		}
 		/**
@@ -314,38 +304,29 @@
 		 * @param {ImageBitmap} data 
 		 * @param {AtlasSpliter} $this 
 		 */
-		startSplit(data,$this){
+		startSplit(data, $this) {
 			$this.ctx.drawImage(data, 0, 0);
-			var w,h;
-			if(data.width > AtlasSpliter.MAX_W){
+			var w, h;
+			if (data.width > AtlasSpliter.MAX_W) {
 				w = AtlasSpliter.MAX_W;
 				$this.isUseConfig = false;//超宽不使用图集配置文件解析
-			}else{
+			} else {
 				w = data.width;
 			}
-			if(data.height > AtlasSpliter.MAX_H){
+			if (data.height > AtlasSpliter.MAX_H) {
 				h = AtlasSpliter.MAX_H;
 				$this.isUseConfig = false;//超高不使用图集配置文件解析
-			}else{
+			} else {
 				h = data.height;
 			}
 			$this.atlasW = w;
 			$this.atlasH = h;
 
-			var rects = null;
 			//区分分解方式
-			if($this.isUseConfig){
-				rects = $this.splitByAtlasConfig($this);
-			}else{
-				rects = $this.splitByColorsMap($this);
-			}
-			//碎图数据
-			var dataAry = $this.generateImageDataAry(rects,$this);
-			$this.ctx.clearRect(0, 0, AtlasSpliter.MAX_W,AtlasSpliter.MAX_H);
-			$this.saveImageDatasByJSZip(dataAry,$this);
-			//保存完成执行回调
-			if($this.callBack){
-				$this.callBack.call();
+			if ($this.isUseConfig) {
+				$this.splitByAtlasConfig($this);
+			} else {
+				$this.splitByColorsMap($this);
 			}
 		}
 
@@ -353,45 +334,79 @@
 		 * 通过配置文件分解图集
 		 * @param {AtlasSpliter} $this 
 		 */
-		splitByAtlasConfig($this){
-
+		splitByAtlasConfig($this) {
+			var reader = new FileReader();
+			reader.readAsText($this.atlasFile, "UTF-8");
+			reader.onload = function (e) {
+				var content = e.target.result;
+				var json = JSON.parse(content);
+				var frames = json.frames;
+				var rects = [];
+				var nameAry = [];
+				for (var element in frames) {
+					var data = frames[element];
+					var rect = new Rectangle(data.frame.x, data.frame.y, data.frame.w, data.frame.h);
+					rects.push(rect);
+					nameAry.push(element);
+				}
+				//碎图数据
+				var dataAry = $this.generateImageDataAry(rects, $this);
+				$this.ctx.clearRect(0, 0, AtlasSpliter.MAX_W, AtlasSpliter.MAX_H);
+				$this.saveImageDatasByJSZip(dataAry, $this, nameAry);
+				//保存完成执行回调
+				if ($this.callBack) {
+					$this.callBack.call();
+				}
+			}
 		}
 
 		/**
 		 * 通过逐像素判定分解图集
 		 * @param {AtlasSpliter} $this 
 		 */
-		splitByColorsMap($this){
+		splitByColorsMap($this) {
 			var colors = $this.generateColorsMap($this);//生成颜色二维数组
 			var rects = [];//碎图包围盒集合
 			var rect = null;//Rectangle
-			for(var i = 0;i < $this.atlasW;++i){
-				for(var j = 0;j < $this.atlasH;++j){
-					if($this.isExist(colors,i,j)){
-						rect = $this.getRect(colors,i,j);
-						if(rect.width > 5 && rect.height > 5){
+			for (var i = 0; i < $this.atlasW; ++i) {
+				for (var j = 0; j < $this.atlasH; ++j) {
+					if ($this.isExist(colors, i, j)) {
+						rect = $this.getRect(colors, i, j);
+						if (rect.width > 5 && rect.height > 5) {
 							rects.push(rect);
 						}
 					}
 				}
 			}
-			return rects;
+
+			//碎图数据
+			var dataAry = $this.generateImageDataAry(rects, $this);
+			$this.ctx.clearRect(0, 0, AtlasSpliter.MAX_W, AtlasSpliter.MAX_H);
+			$this.saveImageDatasByJSZip(dataAry, $this);
+			//保存完成执行回调
+			if ($this.callBack) {
+				$this.callBack.call();
+			}
 		}
 
 		/**
 		 * 存储图形数据
 		 * @param {Array<ImageData>} dataAry 
 		 */
-		saveImageDatasByJSZip(dataAry,$this){
+		saveImageDatasByJSZip(dataAry, $this, nameAry) {
 			var folder = $this.zip.folder($this.preFix);
-			for(var i = 0;i < dataAry.length;++i){
+			for (var i = 0; i < dataAry.length; ++i) {
 				$this.canvas.width = dataAry[i].width;
 				$this.canvas.height = dataAry[i].height;
-				$this.ctx.putImageData(dataAry[i],0,0);
-				var base64 = $this.canvas.toDataURL("image/png",1);
-				base64 = base64.split(",")[1];	
-				folder.file($this.preFix + "_" + i + ".png",base64,{base64:true});
-			}			
+				$this.ctx.putImageData(dataAry[i], 0, 0);
+				var base64 = $this.canvas.toDataURL("image/png", 1);
+				base64 = base64.split(",")[1];
+				if (nameAry) {
+					folder.file(nameAry[i], base64, { base64: true });
+				} else {
+					folder.file($this.preFix + "_" + i + ".png", base64, { base64: true });
+				}
+			}
 		}
 
 		/**
@@ -399,10 +414,10 @@
 		 * @param {Array<Rectangle>} rects 
 		 * @param {AtlasSpliter} $this
 		 */
-		generateImageDataAry(rects,$this){
+		generateImageDataAry(rects, $this) {
 			var dataAry = [];
-			for(var i = 0;i < rects.length;++i){
-				var data = $this.ctx.getImageData(rects[i].x,rects[i].y,rects[i].width,rects[i].height);
+			for (var i = 0; i < rects.length; ++i) {
+				var data = $this.ctx.getImageData(rects[i].x, rects[i].y, rects[i].width, rects[i].height);
 				dataAry.push(data);
 			}
 			return dataAry;
@@ -419,22 +434,22 @@
 			var flag;
 			do {
 				flag = false;
-				while (this.R_Exist(colors, rect)) { 
-					rect.width++; 
+				while (this.R_Exist(colors, rect)) {
+					rect.width++;
 					flag = true;
 				}
-				while (this.D_Exist(colors, rect)) { 
-					rect.height++; 
+				while (this.D_Exist(colors, rect)) {
+					rect.height++;
 					flag = true;
 				}
-				while (this.L_Exist(colors, rect)) { 
-					rect.width++; 
-					rect.x--; 
+				while (this.L_Exist(colors, rect)) {
+					rect.width++;
+					rect.x--;
 					flag = true;
 				}
-				while (this.U_Exist(colors, rect)) { 
-					rect.height++; 
-					rect.y--; 
+				while (this.U_Exist(colors, rect)) {
+					rect.height++;
+					rect.y--;
 					flag = true;
 				}
 			} while (flag);
@@ -449,7 +464,7 @@
 		 * 生成像素颜色二维图
 		 * @param {AtlasSpliter} $this 
 		 */
-		generateColorsMap($this){
+		generateColorsMap($this) {
 			var map = [];
 			var count;
 			var allPixel = $this.ctx.getImageData(0, 0, $this.atlasW, $this.atlasH);//所有像素数据
