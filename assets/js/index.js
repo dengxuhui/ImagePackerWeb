@@ -32,7 +32,7 @@
 			zone.init = $this.init;
 			zone.accept = $this.accept;
 			zone.url = "/";
-			zone.acceptedFiles = ".jpg,.png,.jpeg";
+			zone.acceptedFiles = ".png,.atlas,.json";
 			zone.addRemoveLinks = true;
 			zone.previewTemplate = `
 			<div class="dz-preview dz-file-preview">
@@ -126,11 +126,6 @@
 		 * @param {Function} done 
 		 */
 		accept(file, done) {
-
-		}
-
-		confirm(question, acceptd, rejected) {
-			console.log("confirm");
 		}
 	}
 
@@ -198,7 +193,7 @@
 			var h = data.height > ViewLogic.HEIGHT ? ViewLogic.HEIGHT : data.height;
 			$this.atlasH = h;
 			$this.atlasW = w;
-			var colors = $this.getColors($this);
+			var colors = $this.getColorsNew($this);
 			var rects = [];//Rectangle Array
 			var rect = null;//Rectangle Pointer
 			for (var i = 0; i < $this.atlasW; ++i) {
@@ -353,22 +348,50 @@
 			return colors[x][y];
 		}
 
-		getColors($this) {
+		getColorsOld($this) {
 			$this.btnUpload.innerText = "正在解析像素....";
 			var has = [];
 			var count;
+			var sT = new Date().getTime();
 			for (var i = 0; i < $this.atlasW; ++i) {
 				has[i] = [];
 				for (var j = 0; j < $this.atlasH; ++j) {
-					var piexel = $this.ctx.getImageData(i, j, 1, 1);
+					var pixel = $this.ctx.getImageData(i, j, 1, 1);
 					count = 0;
-					if (piexel.data[0] < 4) count++;
-					if (piexel.data[1] < 4) count++;
-					if (piexel.data[2] < 4) count++;
-					if (piexel.data[3] < 3 || (count > 2 && piexel.data[3] < 30)) has[i][j] = false;
+					if (pixel.data[0] < 4) count++;
+					if (pixel.data[1] < 4) count++;
+					if (pixel.data[2] < 4) count++;
+					if (pixel.data[3] < 3 || (count > 2 && pixel.data[3] < 30)) has[i][j] = false;
 					else has[i][j] = true;
 				}
 			}
+			var eT = new Date().getTime();
+			console.log("用时：" + (eT - sT) + "毫秒");
+			console.log("GET Colors Complete");
+			return has;
+		}
+
+		getColorsNew($this){
+			$this.btnUpload.innerText = "正在解析像素....";
+			var has = [];
+			var count;
+			var sT = new Date().getTime();
+			var allPixel = $this.ctx.getImageData(0,0,$this.atlasW,$this.atlasH);
+			for (var i = 0; i < $this.atlasW; ++i) {
+				has[i] = [];
+				for (var j = 0; j < $this.atlasH; ++j) {
+					// var pixel = $this.ctx.getImageData(i, j, 1, 1);
+					var startIndex = (j * $this.atlasW + i) * 4;
+					count = 0;
+					if (allPixel.data[startIndex] < 4) count++;
+					if (allPixel.data[startIndex + 1] < 4) count++;
+					if (allPixel.data[startIndex + 2] < 4) count++;
+					if (allPixel.data[startIndex + 3] < 3 || (count > 2 && allPixel.data[startIndex + 3] < 30)) has[i][j] = false;
+					else has[i][j] = true;
+				}
+			}
+			var eT = new Date().getTime();
+			console.log("用时：" + (eT - sT) + "毫秒");
 			console.log("GET Colors Complete");
 			return has;
 		}
