@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+		<title>Image Packer Web</title>
+		<link href="assets/css/app.css" rel="stylesheet" type="text/css" />
+	</head>
+
+	<body>
+		<div class="row">
+			<div class="col-12">
+				<div class="card">
+					<div class="card-body">
+						<h4 class="header-title m-t-0">拖放图片到框内上传</h4>
+						<p class="text-muted font-13 m-b-30">
+							本功能使用了Dropzonejs库，详细查看
+							<a href="https://www.dropzonejs.com/" target="_blank">https://www.dropzonejs.com/</a>							
+						</p>
+						<h5 class="text-muted font-13 m-b-30">
+							功能说明：
+							<li>支持多图集分解，如果需要精准分解需要将.atlas拖到表单中</li>
+							<li>分解中对于美术字或者间隔太开的图片处理还不是很好</li>
+							<li>欢迎关注我的Github项目地址：
+								<a href="https://github.com/dengxuhui" target="_blank">https://github.com/dengxuhui</a>
+							</li>
+							<li>博客地址：
+								<a href="https://blog.csdn.net/weixin_36719607" target="_blank">https://blog.csdn.net/weixin_36719607</a>
+							</li>
+						</h5>
+						<form action="/file-upload" method="post" class="dropzone dz-clickable" id="myAwesomeDropzone" data-plugin="dropzone" data-previews-container="#file-previews" data-upload-preview-template="#uploadPreviewTemplate">
+							<div class="dz-message needsclick">
+								<i class="h1 text-muted dripicons-cloud-upload"></i>
+								<h3>拖动文件到方框内或者点击上传文件。</h3>
+								<span class="text-muted font-20">(Copy Right@ By AerTims)</span>
+							</div>
+						</form>
+
+						<!-- Preview -->
+						<div class="dropzone-previews mt-3" id="file-previews"></div>
+					</div>					
+					<!-- end card-body -->
+				</div>
+				<!-- end card-->
+				<button type="button" class="btn btn-block btn-primary" id="btn_package_file">点击分解图片</button>
+			</div>
+			<!-- end col-->
+		</div>
+		<div id="canvasRoot"></div>
+		<script src="assets/js/vendor/dropzone.min.js"></script>
+		<script src="assets/js/vendor/jszip.js"></script>
+		<script src="assets/js/vendor/FileSaver.js"></script>
+		<script type="text/javascript" src="assets/js/index.js" ></script>		
+	</body>
+
+</html>
