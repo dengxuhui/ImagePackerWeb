@@ -599,6 +599,8 @@
 	class Main {
 		constructor() {
 			this.initialize();
+			// var t = new MyTools.Tools();
+			console.log(Dxh);
 		}
 		initialize() {
 			window.DropZoneLogic = new DropZoneLogic();
