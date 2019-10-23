@@ -1,7 +1,7 @@
 /**
  * 个人工具集合
  */
-window.Dxh = (function(exports){
+window.Tool = (function(exports){
     'use strict';
     /**
      * base64处理工具
@@ -19,28 +19,29 @@ window.Dxh = (function(exports){
          * @param {string} input 
          */
         static encode64(input){
-            input = escape(input);
+            input = escape(input);//转义字符
             var output = "";
-            var chr1,chr2,chr3 = "";
-            var enc1,enc2,enc3,enc4 = "";
+            var c1,c2,c3 = "";
+            var e1,e2,e3,e4 = "";
             var i = 0;
+            var n = 2;
             do{
-                chr1 = input.charCodeAt(i++);
-                chr2 = input.charCodeAt(i++);
-                chr3 = input.charCodeAt(i++);
-                enc1 = chr1 >> 2;
-                enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-                enc3 = chr3 & 63;
-                if(isNaN(chr2)){
-                    enc3 = enc4 = 64;
-                }else if(isNaN(chr3)){
-                    enc4 = 64;
+                c1 = input.charCodeAt(i++);//返回指定字符位置的Unicode编码
+                c2 = input.charCodeAt(i++);
+                c3 = input.charCodeAt(i++);
+                e1 = c1 >> 2;//右移2位 
+                e2 = ((c1 & 3) << 4) | (c2 >> 4);//3二进制：11
+                e3 = c3 & 63;//63二进制：111111
+                if(isNaN(c2)){
+                    e3 = e4 = 64;//=
+                }else if(isNaN(c3)){
+                    e4 = 64;//=
                 }
-                output = output + Base64.keyChar.charAt(enc1) + 
-                Base64.keyChar.charAt(enc2) + Base64.keyChar.charAt(enc3) + 
-                Base64.keyChar.charAt(enc4);
-                chr1 = chr2 = chr3 = "";
-                enc1 = enc2 = enc3 = enc4 = "";                                
+                output = output + Base64.keyChar.charAt(e1) + 
+                Base64.keyChar.charAt(e2) + Base64.keyChar.charAt(e3) + 
+                Base64.keyChar.charAt(e4);
+                c1 = c2 = c3 = "";
+                e1 = e2 = e3 = e4 = "";                                
             }while(i < input.length);
             return output;
         }
@@ -51,8 +52,8 @@ window.Dxh = (function(exports){
          */
         static decode64(input){
             var output = "";
-            var chr1,chr2,chr3 = "";
-            var enc1,enc2,enc3,enc4 = "";
+            var c1,c2,c3 = "";
+            var e1,e2,e3,e4 = "";
             var i = 0;
             var base64test = /[^A-Za-z0-9\+\/\=]/g;
             if(base64test.exec(input)){
@@ -61,22 +62,23 @@ window.Dxh = (function(exports){
             }
             input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
             do{
-                enc1 = Base64.keyChar.indexOf(input.charAt(i++));
-                enc2 = Base64.keyChar.indexOf(input.charAt(i++));
-                enc3 = Base64.keyChar.indexOf(input.charAt(i++));
-                enc4 = Base64.keyChar.indexOf(input.charAt(i++));
-                chr1 = (enc1 << 2) | (enc2 >> 4);
-                chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-                chr3 = ((enc3 & 3) << 6) | enc4;
-                output = output + String.fromCharCode(chr1);
-                if(enc3 != 64){
-                    output = output + String.fromCharCode(chr2);
+                e1 = Base64.keyChar.indexOf(input.charAt(i++));
+                e2 = Base64.keyChar.indexOf(input.charAt(i++));
+                e3 = Base64.keyChar.indexOf(input.charAt(i++));
+                e4 = Base64.keyChar.indexOf(input.charAt(i++));
+                c1 = (e1 << 2) | (e2 >> 4);
+                //
+                c2 = ((e2 & 15) << 4) | (e3 >> 2);//15二进制：1111
+                c3 = ((e3 & 3) << 6) | e4;//3二进制：11
+                output = output + String.fromCharCode(c1);
+                if(e3 != 64){
+                    output = output + String.fromCharCode(c2);
                 }
-                if(enc4 != 64){
-                    output = output + String.fromCharCode(chr3);
+                if(e4 != 64){
+                    output = output + String.fromCharCode(c3);
                 }
-                chr1 = chr2 = chr3 = "";
-                enc1 = enc2 = enc3 = enc4 = "";
+                c1 = c2 = c3 = "";
+                e1 = e2 = e3 = e4 = "";
             }while(i < input.length);
             return unescape(output);
         }

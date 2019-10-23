@@ -598,13 +598,17 @@
 	 */
 	class Main {
 		constructor() {
-			this.initialize();
-			// var t = new MyTools.Tools();
-			console.log(Dxh);
+			this.initialize();			
+			this.testBase64();
 		}
 		initialize() {
 			window.DropZoneLogic = new DropZoneLogic();
 			window.ViewLogic = new ViewLogic();
+		}
+
+		testBase64(){
+			var result = Tool.Base64.encode64("Hello World");
+			console.log(result);
 		}
 	}
 	new Main();
