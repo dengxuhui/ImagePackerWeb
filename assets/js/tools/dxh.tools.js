@@ -24,7 +24,6 @@ window.Tool = (function(exports){
             var c1,c2,c3 = "";
             var e1,e2,e3,e4 = "";
             var i = 0;
-            var n = 2;
             do{
                 c1 = input.charCodeAt(i++);//返回指定字符位置的Unicode编码
                 c2 = input.charCodeAt(i++);
