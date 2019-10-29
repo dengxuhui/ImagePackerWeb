@@ -471,6 +471,70 @@ window.Laya = (function (exports) {
     }
 
     /**
+     * 字符串工具
+     */
+    class StringTool{
+        constructor(){}
+        /**
+         * 转大写
+         * @param {string} str 
+         */
+        static toUpCase(str){
+            return str.toUpperCase();
+        }
+
+        /**
+         * 转小写
+         * @param {string} str 
+         */
+        static toLowCase(str){
+            return str.toLowerCase();
+        }
+
+        /**
+         * 将第一个字符转为大写
+         * 不管后面的字符
+         * @param {string} str 
+         */
+        static toUpHead(str){
+            var rst;
+            if(str.length <= 1)return str.toUpperCase();
+            rst = str.charAt(0).toUpperCase + str.substr(1);
+            return rst;
+        }
+
+        /**
+         * 首字符转小写
+         * @param {string} str 
+         */
+        static toLowHead(str){
+            var rst;
+            if(str.length <= 1)return str.toLowerCase();
+            rst = rst.charAt(0).toLowerCase() + str.substr(1);
+            return rst;            
+        }
+
+        /**
+         * package名字转全路径
+         * @param {string} packageName 
+         */
+        static packageToFoladerPath(packageName){
+            var rst = packageName.replace(".","/");
+            return rst;
+        }
+
+        /**
+         * 从index位置插入iStr到str中
+         * @param {string} str 
+         * @param {string} iStr 
+         * @param {number} index 
+         */
+        static insert(str,iStr,index){
+            return str.substring(0,index) + iStr + str.substr(index);
+        }
+    }
+
+    /**
      * 压缩工具
      */
     class CompressTool {
@@ -549,6 +613,14 @@ window.Laya = (function (exports) {
             completeHandler && completeHandler();
         }
 
+        // pngquant使用中值切割量化算法的修改版本和附加技术来减轻中值切割的缺陷
+        // 而不是分裂具有最大音量或颜色数量的盒子，而是选择盒子以最小化其中值的方差
+        // 直方图是建立在基本感知模型的基础之上的，这样可以减少图像噪点区域的重量。
+        // 为了进一步改善颜色，在类似梯度下降的过程中调整直方图（中值切割重复许多次，在表现不佳的颜色上重量更多）
+        // 最后，使用Voronoi迭代（k均值）来校正颜色，这保证了局部最佳的调色板。
+        // pngquant在预乘alpha颜色空间中工作，以减少透明颜色的重量
+        // 当重新映射时，误差扩散仅应用于若干相邻像素量化为相同值且不是边缘的区域。
+        // 这避免了再没有抖动的情况下降视觉质量增加的区域
         /**
          * 压缩png图片
          * @param {string} filePath 
@@ -556,7 +628,12 @@ window.Laya = (function (exports) {
          * @param {Function} completeHandler 
          */
         static compressPng(filePath,tarPath,completeHandler){
-            // var exePath = File
+            var exePath = FileTools.path.join
+            (
+                NodeJSTool.getMyPath(),"lib","pngquant",
+                "win32"==OSInfo.os.platform() ? "pngquant.exe" : "pngquant"
+            );
+            // exePath = 
         }
     }
     exports.CompressTool = CompressTool;
