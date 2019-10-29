@@ -1,0 +1,31 @@
+{
+  "name": "imagepackerweb",
+  "version": "1.0.0",
+  "description": "atlas split with atlas or not by direct split with canvas",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dengxuhui/ImagePackerWeb.git"
+  },
+  "keywords": [
+    "Image",
+    "Atlas",
+    "DropZone.js",
+    "JSZip"
+  ],
+  "author": "dengxuhui",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dengxuhui/ImagePackerWeb/issues"
+  },
+  "homepage": "https://github.com/dengxuhui/ImagePackerWeb#readme",
+  "devDependencies": {
+    "gulp": "^4.0.2",
+    "gulp-jshint": "^2.1.0",
+    "jshint": "^2.10.2",
+    "tsify": "^4.0.1"
+  }
+}

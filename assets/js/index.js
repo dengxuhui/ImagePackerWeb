@@ -604,6 +604,7 @@
 		initialize() {
 			window.DropZoneLogic = new DropZoneLogic();
 			window.ViewLogic = new ViewLogic();
+			this.testBase64();
 		}
 
 		testBase64(){
