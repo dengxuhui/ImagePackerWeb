@@ -874,6 +874,12 @@ window.Laya = (function (exports) {
          */
         static compressJpg(filePath,tarPath,completeHandler){
             var exePath = "guetzli_" + OSInfo.os.platform() + "_x86";
+            if("x64"==OSInfo.os.arch()){
+                exePath += "-64";
+            }
+            if("win32" == OSInfo.os.platform()){
+                exePath += ".exe";
+            }
             
         }
     }
