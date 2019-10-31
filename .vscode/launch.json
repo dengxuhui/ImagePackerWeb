@@ -2,7 +2,7 @@
 	// "version": "0.2.0",
 	"configurations": [ 		
 		{
-			"name": "chrome调试",
+			"name": "AtlasSplit",
 			"type": "chrome",
 			"request": "launch",
 			"file": "${workspaceRoot}/index.html",
@@ -11,6 +11,22 @@
 				"--allow-file-access-frome-files",
 				" --disable-web-security"
 			]					
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "NodeJs",
+			"program": "${workspaceFolder}/assets/js/tools/nodes/filetools.js"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Es6ToEs5",
+			// "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
+			"program": "${workspaceFolder}/gulpfile.js",
+			"args": [
+				"Es6ToEs5"
+			]
 		}
 	]
 }

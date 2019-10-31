@@ -603,7 +603,7 @@
 		initialize() {
 			window.DropZoneLogic = new DropZoneLogic();
 			window.ViewLogic = new ViewLogic();
-			this.testBase64();
+			// console.log(Tool.Base64.keyChar);
 		}
 	}
 	new Main();

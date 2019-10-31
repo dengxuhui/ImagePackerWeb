@@ -23,9 +23,18 @@
   },
   "homepage": "https://github.com/dengxuhui/ImagePackerWeb#readme",
   "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-es2015": "^6.24.1",
     "gulp": "^4.0.2",
+    "gulp-babel": "^7.0.1",
     "gulp-jshint": "^2.1.0",
     "jshint": "^2.10.2",
     "tsify": "^4.0.1"
+  },
+  "dependencies": {
+    "arr-flatten": "^1.1.0",
+    "is-buffer": "^2.0.4",
+    "isobject": "^4.0.0",
+    "kind-of": "^6.0.2"
   }
 }
