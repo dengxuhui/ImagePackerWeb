@@ -594,6 +594,13 @@
 	}
 
 	/**
+	 * 百度图像文字识别
+	 */
+	class BaiduOCR{
+		constructor(){}
+	}
+
+	/**
 	 * 主函数
 	 */
 	class Main {
