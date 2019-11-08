@@ -128,14 +128,28 @@
 		constructor() {
 			var $this = this;
 			//是否正在分解中
-			$this.isSpliting = false;
+			this.isSpliting = false;
 			//上传处理			
-			$this.btnUpload = document.getElementById("btn_package_file");
+			this.btnUpload = document.getElementById("btn_package_file");
+			this.btnOCR = document.getElementById("btn_baidubce");
 			//图集分解对象
-			$this.atlasSpliterAry = [];
-			$this.splitCount = 0;
+			this.atlasSpliterAry = [];
+			this.splitCount = 0;
 			//压缩	
-			$this.zip = new JSZip();
+			this.zip = new JSZip();
+
+			this.btnOCR.onclick = function(e){
+				$this.btnOCR.onclick = null;
+				var dropzone = window.DropZoneLogic.dropzone;
+				var files = dropzone.files;
+				var len = files.length;
+				for (var i = 0; i < len; ++i) {
+					if (files[i].type == "image/png") {//找到一个是文件
+						var ocr = new BaiduOCR();
+						ocr.findFileWords(files[i]);
+					}
+				}				
+			}
 
 			//鼠标点击事件注册
 			this.btnUpload.onclick = function (e) {
@@ -597,7 +611,81 @@
 	 * 百度图像文字识别
 	 */
 	class BaiduOCR{
-		constructor(){}
+
+		constructor(){
+			/**
+			 * token
+			 */
+			this.token;
+			/**
+			 * string 圖像數據
+			 */
+			this.image;
+		}
+
+		/**
+		 * 将文件写入Canvas
+		 */
+		findFileWords(file) {
+			var $this = this;
+			createImageBitmap(file).then((data) => {
+				var canvas = document.createElement("canvas");
+				canvas.width = data.width;
+				canvas.height = data.height;
+				var ctx = canvas.getContext("2d");
+				ctx.drawImage(data,0,0);
+				var base = canvas.toDataURL("image/png", 1);
+				$this._doReqOCR(base);
+			});
+		}
+
+		/**
+		 * 请求识别
+		 * @param {string} image Base64图形数据
+		 */
+		_doReqOCR(image){
+			this.image = image;
+			if(this.token){
+				this._reqOCR();
+			}else{
+				this._reqToken();
+			}
+		}
+
+		/**
+		 * 请求识别图像内容
+		 */
+		_reqOCR(){
+			var http = new Tool.HttpRequest();
+			var url = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=" + this.token;
+			var imgData = {
+				image:this.image.split(",")[1]
+			}
+			http.once("complete",this,(data)=>{
+				console.log(data);
+			});
+			http.send(url,imgData,"POST","text",['content-type','application/x-www-form-urlencoded']);
+		}
+
+		/**
+		 * 请求token
+		 */
+		_reqToken(){
+			var tokenHttp = new Tool.HttpRequest();
+			var url = `https://aip.baidubce.com/oauth/2.0/token?
+			grant_type=client_credentials&
+			client_id=QD3uu8y3cE1bGTyQ1GsI8tvH&
+			client_secret=4qmBtWPfgsNbodbZWC9wKG6oGdqPBHy1&`;
+			tokenHttp.once("complete",this,(data)=>{
+				var jd = JSON.parse(data);
+				this.token = jd.access_token;
+				this._reqOCR();
+			});
+			tokenHttp.once("error",this,()=>{
+				console.warn("ERROR ON HTTP POST");
+			});
+			tokenHttp.send(url,null,"post");
+		}
 	}
 
 	/**
@@ -610,7 +698,6 @@
 		initialize() {
 			window.DropZoneLogic = new DropZoneLogic();
 			window.ViewLogic = new ViewLogic();
-			// console.log(Tool.Base64.keyChar);
 		}
 	}
 	new Main();
