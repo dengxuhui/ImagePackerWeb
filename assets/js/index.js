@@ -657,14 +657,12 @@
 		 */
 		_reqOCR(){
 			var http = new Tool.HttpRequest();
-			var url = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=" + this.token;
-			var imgData = {
-				image:this.image.split(",")[1]
-			}
+			var url = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic?access_token=" + this.token;
+			var img = "image="+encodeURIComponent(this.image.split(',')[1]);
 			http.once("complete",this,(data)=>{
 				console.log(data);
 			});
-			http.send(url,imgData,"POST","text",['content-type','application/x-www-form-urlencoded']);
+			http.send(url,img,"post","text",['content-type','application/x-www-form-urlencoded']);
 		}
 
 		/**
