@@ -145,8 +145,10 @@
 				var len = files.length;
 				for (var i = 0; i < len; ++i) {
 					if (files[i].type == "image/png") {//找到一个是文件
-						var ocr = new BaiduOCR();
-						ocr.findFileWords(files[i]);
+						Tool.Timer.I.once(100 + i * 3000, this, (file) => {
+							var ocr = new BaiduOCR();
+							ocr.findFileWords(file);
+						}, [files[i]]);
 					}
 				}				
 			}
@@ -621,6 +623,10 @@
 			 * string 圖像數據
 			 */
 			this.image;
+			/**
+			 * 图片名字
+			 */
+			this.fileName;
 		}
 
 		/**
@@ -628,10 +634,15 @@
 		 */
 		findFileWords(file) {
 			var $this = this;
+			this.fileName = file.name;
 			createImageBitmap(file).then((data) => {
 				var canvas = document.createElement("canvas");
 				canvas.width = data.width;
 				canvas.height = data.height;
+				if(canvas.width <= 0 || canvas.height <= 0){
+					console.warn("——File Size Error:" + file.name);
+					return;
+				}
 				var ctx = canvas.getContext("2d");
 				ctx.drawImage(data,0,0);
 				var base = canvas.toDataURL("image/png", 1);
@@ -660,7 +671,12 @@
 			var url = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic?access_token=" + this.token;
 			var img = "image="+encodeURIComponent(this.image.split(',')[1]);
 			http.once("complete",this,(data)=>{
-				console.log(data);
+				var oData = JSON.parse(data);
+				if(oData.words_result_num <= 0){
+					console.log(this.fileName + "  Empty！！！");
+				}else{
+					console.log(this.fileName + "   " + oData.words_result[0].words);
+				}
 			});
 			http.send(url,img,"post","text",['content-type','application/x-www-form-urlencoded']);
 		}

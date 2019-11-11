@@ -149,7 +149,7 @@ window.Tool = (function (exports) {
     Handler._gid = 1;
     /**
      * 事件回调函数
-     */    
+     */
     class EventHandler extends Handler {
         constructor(caller, method, args, once) {
             super(caller, method, args, once);
@@ -405,8 +405,304 @@ window.Tool = (function (exports) {
             return this._http;
         }
     }
+
+    /**
+     * 计时器函数处理对象
+     */
+    class TimerHandler {
+        constructor() { }
+        clear() {
+            this.caller = null;
+            this.method = null;
+            this.args = null;
+        }
+
+        /**
+         * 执行handler
+         */
+        run(withClear) {
+            var caller = this.caller;
+            var method = this.method;
+            var args = this.args;
+            withClear && this.clear();
+            if (method == null) return;
+            //将函数作用于用于caller
+            args ? method.apply(caller, args) : method.call(caller);
+        }
+    }
+    /**
+     * laya中timer
+     */
+    class Timer {
+        constructor() {
+            this.scale = 1;
+            this.currTimer = Date.now();
+            this.currFrame = 0;
+            this._delta = 0;
+            this._lastTimer = Date.now();
+            this._map = [];
+            this._handlers = [];
+            this._temp = [];
+            this._count = 0;
+        }
+
+        get delta() {
+            return this._delta;
+        }
+
+        /**
+         * 帧更新函数
+         */
+        _update() {
+            if (this.scale <= 0) {
+                this._lastTimer = Date.now();
+                this._delta = 0;
+                return;
+            }
+            var frame = this.currFrame = this.currFrame + this.scale;
+            var now = Date.now();
+            var awake = (now - this._lastTimer) > 30000;
+            this._delta = (now - this._lastTimer) * this.scale;//上一帧跟当前帧的时间间隔毫秒
+            var timer = this.currTimer = this.currTimer + this._delta;
+            this._lastTimer = now;
+            var handlers = this._handlers;
+            this._count = 0;
+            for (var i = 0, l = handlers.length; i < l; ++i) {
+                var handler = handlers[i];
+                if (handler.method !== null) {
+                    var t = handler.useFrame ? frame : timer;
+                    if (t >= handler.exeTime) {
+                        if (handler.repeat) {
+                            if (!handler.jumpFrame || awake) {
+                                handler.exeTime += handler.delay;
+                                handler.run(false);
+                                if (t > handler.exeTime) {
+                                    handler.exeTime += Math.ceil((t - handler.exeTime) / handler.delay) * handler.delay;
+                                }
+                            } else {
+                                while (t >= handler.exeTime) {
+                                    handler.exeTime += handler.delay;
+                                    handler.run(false);
+                                }
+                            }
+                        } else {
+                            handler.run(true);
+                        }
+                    }
+                } else {
+                    this._count++;
+                }
+            }
+            if (this._count > 30 || frame % 200 === 0) {
+                this._clearHandlers();
+            }
+        }
+
+        /**
+         * 清除不需要的handler，使用交换数组方式
+         */
+        _clearHandlers() {
+            var handlers = this._handlers;
+            for (var i = 0, n = handlers.length; i < n; ++i) {
+                var handler = handlers[i];
+                if (handler.method !== null) {
+                    this._temp.push(handler);
+                } else {
+                    this._removeHandler(handler);
+                }
+            }
+            this._handlers = this._temp;
+            handlers.length = 0;
+            this._temp = handlers;
+        }
+
+        /**
+         * 从map移除handler 并放置到资源池
+         * @param {TimerHandler} handler 
+         */
+        _removeHandler(handler) {
+            if (this._map[handler.key] == handler) {
+                this._map[handler.key] = null;
+            }
+            handler.clear();
+            Timer._pool.push(handler);
+        }
+
+        /**
+         * 创建函数Handler
+         * @param {boolean} useFrame 
+         * @param {boolean} repeat 
+         * @param {number} delay 
+         * @param {object} caller 
+         * @param {Function} method 
+         * @param {Array<any>} args 
+         * @param {boolean} coverBefore 
+         */
+        _create(useFrame, repeat, delay, caller, method, args, coverBefore) {
+            //没有延迟就立即执行
+            if (!delay) {
+                method.apply(caller, args);
+                return null;
+            }
+            if (coverBefore) {
+                var handler = this._getHandler(caller, method);
+                if (handler) {
+                    handler.repeat = repeat;
+                    handler.useFrame = useFrame;
+                    handler.delay = delay;
+                    handler.caller = caller;
+                    handler.method = method;
+                    handler.args = args;
+                    handler.exeTime = delay + (useFrame ? this.currFrame : this.currTimer + Date.now() - this._lastTimer);
+                    return handler;
+                }
+            }
+            handler = Timer._pool.length > 0 ? Timer._pool.pop() : new TimerHandler();
+            handler.repeat = repeat;
+            handler.useFrame = useFrame;
+            handler.delay = delay;
+            handler.caller = caller;
+            handler.method = method;
+            handler.args = args;
+            handler.exeTime = delay + (useFrame ? this.currFrame : this.currTimer + Date.now() - this._lastTimer);
+            this._indexHandler(handler);
+            this._handlers.push(handler);
+            return handler;
+        }
+
+        /**
+         * 为handler添加索引至map
+         * @param {TimerHandler} handler 
+         */
+        _indexHandler(handler) {
+            var caller = handler.caller;
+            var method = handler.method;
+            handler.key = method.$_TID || (method.$_TID = Timer._mid++);
+            this._map[handler.key] = handler;
+        }
+
+        /**
+         * 获取handler
+         * 在Laya中还会根据Caller去获取cid来获取handler  这里省略  直接将method转成mid获取handler
+         * @param {Function} method 
+         */
+        _getHandler(method) {
+            var mid = method.$_TID || (method.$_TID = (Timer._mid++));
+            return this._map[mid];
+        }
+
+        //-----------------------------------private over-------------------------------//
+
+        /**
+         * 注册一次函数
+         * @param {number} delay 
+         * @param {any} caller 
+         * @param {Function} method 
+         * @param {Array<any>} args 
+         * @param {boolean} coverBefore 
+         */
+        once(delay, caller, method, args = null, coverBefore = true) {
+            this._create(false, false, delay, caller, method, args, coverBefore);
+        }
+
+        /**
+         * 循环
+         * @param {number} delay 
+         * @param {any} caller 
+         * @param {Function} method 
+         * @param {Array<any>} args 
+         * @param {boolean} coverBefore 
+         * @param {boolean} jumpFrame 
+         */
+        loop(delay, caller, method, args = null, coverBefore = true, jumpFrame = false) {
+            var handler = this._create(false, true, delay, caller, method, args, coverBefore);
+            if (handler) {
+                handler.jumpFrame = jumpFrame;
+            }
+        }
+
+        /**
+         * 下一帧执行一次
+         * 与callerlater不同的是 frameonce在渲染之后执行 calllater在渲染之前执行
+         * @param {number} delay 
+         * @param {any} caller 
+         * @param {Function} method 
+         * @param {Array<any>} args 
+         * @param {boolean} coverBefore 
+         */
+        frameOnce(delay, caller, method, args = null, coverBefore = true) {
+            this._create(true, false, delay, caller, method, args, coverBefore);
+        }
+
+        /**
+        * 帧循环
+        * @param {number} delay 
+        * @param {any} caller 
+        * @param {Function} method 
+        * @param {Array<any>} args 
+        * @param {boolean} coverBefore 
+        */
+        frameLoop(delay, caller, method, args = null, coverBefore = true) {
+            this._create(true, true, delay, caller, method, args, coverBefore);
+        }
+
+        /**
+         * 清除计时器回调
+         * @param {Function} method 
+         */
+        clear(method) {
+            var handler = this._getHandler(method);
+            if (handler) {
+                this._map[handler.key] = null;
+                handler.key = 0;
+                handler.clear();
+            }
+        }
+
+        /**
+         * 清空=注册到caller上所有计时器函数
+         * @param {any} caller 
+         */
+        clearAll(caller) {
+            if (!caller) {
+                return;
+            }
+            for (var i = 0, n = this._handlers.length; i < n; ++i) {
+                var handler = this._handlers[i];
+                if (handler.caller === caller) {
+                    this._map[handler.key] = null;
+                    handler.key = 0;
+                    handler.clear();
+                }
+            }
+        }
+
+        pause() {
+            this.scale = 0;
+        }
+
+        resume() {
+            this.scale = 1;
+        }
+    }
+    /**
+     * 回调函数资源池
+     */
+    Timer._pool = [];
+    /**
+     * 唯一id索引
+     */
+    Timer._mid = 1;
+    Timer.I = new Timer();
+
+    var _update = function () {
+        Timer.I._update();
+        requestAnimationFrame(_update);
+    }
+    requestAnimationFrame(_update);
     exports.Base64 = Base64;
     exports.EventDispatcher = EventDispatcher;
     exports.HttpRequest = HttpRequest;
+    exports.Timer = Timer;
     return exports;
 }({}))
