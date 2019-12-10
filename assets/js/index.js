@@ -132,11 +132,24 @@
 			//上传处理			
 			this.btnUpload = document.getElementById("btn_package_file");
 			this.btnOCR = document.getElementById("btn_baidubce");
+			this.btnScale = document.getElementById("btn_scale");
 			//图集分解对象
 			this.atlasSpliterAry = [];
 			this.splitCount = 0;
 			//压缩	
 			this.zip = new JSZip();
+
+			this.btnScale.onclick = function(e){
+				$this.btnScale.onclick = null;
+				var dropzone = window.DropZoneLogic.dropzone;
+				var files = dropzone.files;
+				var len = files.length;
+				for (var i = 0; i < len; ++i) {
+					if (files[i].type == "image/png") {//找到一个是文件
+						
+					}
+				}
+			}
 
 			this.btnOCR.onclick = function(e){
 				$this.btnOCR.onclick = null;
